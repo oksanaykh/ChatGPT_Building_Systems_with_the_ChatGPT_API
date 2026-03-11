@@ -1,224 +1,65 @@
-# Building Systems with the ChatGPT API -- Course Report
-
-This repository contains structured notes and best practices from the
-course **"Building Systems with the ChatGPT API"** by **DeepLearning.AI
-and OpenAI**.
-
-The report summarizes architectural patterns and engineering practices
-for integrating **Large Language Models (LLMs)** into production systems
-with a focus on **safety, accuracy, and scalability**.
-
-------------------------------------------------------------------------
-
-# 1. Introduction to Large Language Models (LLMs)
-
-Modern LLMs are algorithms trained using **supervised learning** to
-repeatedly predict the next token in a sequence.
-
-## Base LLM vs Instruction-Tuned LLM
-
-  -----------------------------------------------------------------------
-  Feature                 Base LLM                Instruction-Tuned LLM
-  ----------------------- ----------------------- -----------------------
-  Training principle      Predicts next word from Fine-tuned on
-                          large datasets          instruction--response
-                                                  pairs
-
-  Optimization            Supervised Learning     RLHF (Reinforcement
-                                                  Learning from Human
-                                                  Feedback)
-
-  Typical behavior        Continues text          Follows user
-                          logically               instructions and aims
-                                                  to be helpful
-  -----------------------------------------------------------------------
-
-------------------------------------------------------------------------
-
-## Tokenization and Context Limits
-
-LLMs process **tokens**, not words.
-
-Example:
-
-`lollipop → l + oll + ipop`
-
-Empirical rule:
-
--   **1 token ≈ 4 characters**
--   **1 token ≈ ¾ word**
-
-Example context window:
-
--   **gpt-3.5-turbo ≈ 4000 tokens**
-
-Tokens also determine **API cost**.
-
-------------------------------------------------------------------------
-
-# 2. Chat Format Architecture and Security
-
-LLM systems use structured messages with roles.
-
-### System
-
-Defines assistant behavior and constraints.
-
-### User
-
-Contains the user query.
-
-### Assistant
-
-Stores previous responses and maintains conversation context.
-
-------------------------------------------------------------------------
-
-## API Key Security
-
-Best practices:
-
-1.  Never hardcode keys in scripts
-2.  Store keys in `.env` files
-3.  Load them using `python-dotenv`
-
-------------------------------------------------------------------------
-
-# 3. Evaluating Inputs
-
-## Query Classification
-
-Requests can be routed to different modules:
-
--   billing
--   technical support
--   product information
-
-Using **JSON output** simplifies routing.
-
-------------------------------------------------------------------------
-
-## Content Moderation
-
-The **OpenAI Moderation API** classifies content into categories such
-as:
-
--   hate
--   violence
--   self-harm
--   sexual content
-
-------------------------------------------------------------------------
-
-## Preventing Prompt Injection
-
-Example attack:
-
-"Ignore previous instructions."
-
-Strategies:
-
-### Delimiters
-
-    ####
-    User input
-    ####
-
-### Detection Prompt
-
-A separate prompt checks whether user input attempts to override system
-instructions.
-
-------------------------------------------------------------------------
-
-# 4. Processing Inputs
-
-## Chain of Thought
-
-Encourages the model to generate intermediate reasoning steps.
-
-### Inner Monologue Pattern
-
-Applications hide reasoning from users and only show final answers.
-
-------------------------------------------------------------------------
-
-## Prompt Chaining
-
-Complex tasks are split into smaller prompts.
-
-Advantages:
-
--   better state management
--   lower cost
--   easier debugging
--   easier integration with external tools
-
-------------------------------------------------------------------------
-
-# 5. Checking Outputs
-
-### Output Moderation
-
-Verify response safety using the Moderation API.
-
-### Fact Verification
-
-Compare generated responses with trusted context to detect
-hallucinations.
-
-------------------------------------------------------------------------
-
-# 6. Evaluation Strategies
-
-Typical workflow:
-
-1.  Prompt tuning
-2.  Collect difficult cases
-3.  Build a development dataset
-4.  Run automated evaluation
-
-------------------------------------------------------------------------
-
-## Rubric-Based Evaluation
-
-LLMs (often GPT‑4) can evaluate answers using criteria:
-
--   factual correctness
--   completeness
--   tone
-
-------------------------------------------------------------------------
-
-## OpenAI Evals
-
-Responses are compared with a reference answer:
-
-  Score   Meaning
-  ------- ---------------------------------------
-  A       Correct subset
-  B       Correct but contains extra info
-  C       Slightly different but mostly correct
-  D/E     Factually incorrect
-
-------------------------------------------------------------------------
-
-# 7. Example System: Customer Support Assistant
-
-Pipeline:
-
-1.  Input moderation
-2.  Intent classification
-3.  Retrieval of product data
-4.  Response generation
-5.  Output moderation
-
-------------------------------------------------------------------------
-
-# 8. Key Takeaways
-
--   Prompt engineering reduces development time dramatically
--   Modular prompt chains are more reliable than single prompts
--   System evaluation must be systematic
--   LLMs should be treated as **reasoning agents**, not static knowledge
-    bases
+# Building Systems with ChatGPT API: Architectural Patterns & Best Practices
+
+This repository outlines the best practices for developing production-ready systems based on Large Language Models (LLMs), following the curriculum developed by **DeepLearning.AI** and **OpenAI**.
+
+### 📋 Table of Contents
+1. [LLM Architecture Overview](#1-llm-architecture-overview)
+2. [Chat Format & Security](#2-chat-format--security)
+3. [Evaluating Inputs](#3-evaluating-inputs)
+4. [Processing Methods: CoT & Chaining](#4-processing-methods)
+5. [Checking Outputs](#5-checking-outputs)
+6. [Evaluation Strategies](#6-evaluation-strategies)
+7. [Case Study: Customer Support Assistant](#7-case-study)
+
+---
+
+### 1. LLM Architecture Overview
+Modern LLMs are trained to predict the next token. It is crucial to distinguish between:
+
+*   **Base LLM:** Trained on massive datasets to complete text.
+*   **Instruction Tuned LLM:** Optimized via SFT and RLHF to follow specific user commands.
+
+#### Tokenization
+*   1 token ≈ 4 characters (English).
+*   Context window limits (e.g., 4000 tokens for GPT-3.5) include both input and output.
+
+### 2. Chat Format & Security
+Dialogue management relies on three distinct roles:
+*   `System`: Sets global behavior and constraints.
+*   `User`: The current user query.
+*   `Assistant`: Stores previous model responses to maintain context.
+
+> **Security Tip:** Never hardcode API keys. Use `.env` files and the `python-dotenv` library for environment variable management.
+
+### 3. Evaluating Inputs
+*   **Classification:** Categorizing queries (e.g., `billing`, `technical_support`) using JSON for programmatic routing.
+*   **Moderation API:** A free tool to check inputs for hate speech, violence, or self-harm.
+*   **Prompt Injection Prevention:** Using delimiters (e.g., `####`) and verification prompts to detect attempts to bypass system instructions.
+
+### 4. Processing Methods
+#### Chain of Thought (CoT)
+Forcing the model to generate intermediate reasoning steps. Use an "Inner Monologue" approach to hide technical reasoning from the end-user.
+
+#### Chaining Prompts
+Breaking complex tasks into a sequence of simpler, modular prompts.
+*   **Benefits:** Lower latency, reduced costs, easier debugging, and seamless API integration between steps.
+
+### 5. Checking Outputs
+Before displaying the result:
+1. Perform a second moderation check.
+2. **Fact-Verification:** Compare the assistant's response against the provided context to prevent hallucinations.
+
+### 6. Evaluation Strategies
+Development is iterative:
+*   **Rubric-based Evaluation:** Using a stronger model (like GPT-4) to grade responses based on specific criteria.
+*   **OpenAI Evals:** An open-source framework for comparing model outputs against "gold standard" human answers.
+
+### 7. Case Study: Customer Support Assistant
+A standard system pipeline:
+1. `Input Moderation` → 2. `Classification` → 3. `Information Retrieval` → 4. `Response Generation` → 5. `Output Verification`.
+
+---
+### 💡 Key Takeaways
+*   Treat the LLM as a **Reasoning Agent**, not a static database.
+*   Modular chains of short, specialized prompts are more reliable than a single "super-prompt."
+*   System quality is defined by systematic evaluation, not subjective impressions.
